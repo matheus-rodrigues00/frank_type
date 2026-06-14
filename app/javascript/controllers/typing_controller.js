@@ -181,7 +181,7 @@ export default class extends Controller {
     this.progressTarget.textContent = `${this.session.cursor}/${this.session.targetText.length}`
     this.sourceTarget.textContent = `${this.currentExcerpt.title} · ${this.currentExcerpt.author}`
     this.stateLabelTarget.textContent = this.session.finished ? "complete" : this.session.started ? "typing" : "click here and start typing"
-    const digraphSummary = this.session.digraphSummary()
+    const digraphSummary = this.session.finished ? this.session.digraphSummary() : emptyDigraphSummary()
     this.textTarget.replaceChildren(...this.characterSpans(digraphSummary))
     this.renderSlowPairs(digraphSummary)
     this.scrollCursorIntoView()
@@ -316,5 +316,13 @@ export default class extends Controller {
 
   get currentExcerpt() {
     return this.excerptsValue[this.excerptIndex]
+  }
+}
+
+function emptyDigraphSummary() {
+  return {
+    samples: [],
+    rankedPairs: [],
+    medianLatencyMs: 0
   }
 }

@@ -72,7 +72,7 @@ export class TypingSessionState {
   }
 
   shouldFinish() {
-    return this.remainingSeconds <= 0 || this.cursor >= this.targetText.length
+    return this.remainingSeconds <= 0
   }
 
   finish(now = performance.now()) {
