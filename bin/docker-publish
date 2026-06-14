@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IMAGE="${IMAGE:-akitaonrails/frank_type}"
+VERSION_TAG="${VERSION_TAG:-$(git rev-parse --short HEAD)}"
+PLATFORMS="${PLATFORMS:-linux/amd64,linux/arm64}"
+
+docker buildx inspect frank-type-builder >/dev/null 2>&1 || docker buildx create --name frank-type-builder --use >/dev/null
+docker buildx use frank-type-builder
+
+docker buildx build \
+  --platform "${PLATFORMS}" \
+  --build-arg "APP_REVISION=${VERSION_TAG}" \
+  --tag "${IMAGE}:${VERSION_TAG}" \
+  --tag "${IMAGE}:latest" \
+  --push \
+  .

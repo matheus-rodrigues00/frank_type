@@ -13,6 +13,8 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_select "[role='dialog'][aria-labelledby='typing-help-title']"
     assert_select "#typing-help-title", text: "Shortcuts"
     assert_select "a[href='/?locale=pt-BR']", text: "Português"
+    assert_includes response.headers.fetch("Content-Security-Policy"), "script-src 'self' 'nonce-"
+    assert_match(/<script[^>]+nonce=/, response.body)
   end
 
   test "profile renders local dashboard" do

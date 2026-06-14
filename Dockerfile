@@ -1,15 +1,23 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t frank_type .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name frank_type frank_type
+# Production image for local Docker, Docker Compose, and Docker Hub publishing:
+# docker build -t akitaonrails/frank_type:latest .
+# docker run --rm -p 3200:80 -e SECRET_KEY_BASE=$(bin/rails secret) -e HOST=localhost -e FORCE_SSL=false -e ASSUME_SSL=false akitaonrails/frank_type:latest
+# bin/docker-publish
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=3.4.8
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+
+ARG APP_REVISION="unknown"
+LABEL org.opencontainers.image.title="Frank Type" \
+      org.opencontainers.image.description="Rails typing trainer for public-domain excerpts" \
+      org.opencontainers.image.source="https://github.com/akitaonrails/frank_type" \
+      org.opencontainers.image.revision="$APP_REVISION" \
+      org.opencontainers.image.licenses="MIT"
 
 # Rails app lives here
 WORKDIR /rails
