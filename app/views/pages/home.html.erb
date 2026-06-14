@@ -7,11 +7,8 @@
   data-typing-excerpts-value="<%= json_escape(Typing::ExcerptCatalog.as_json.to_json) %>"
 >
   <div class="glass-panel p-4 sm:p-6 lg:p-8">
-    <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p class="text-xs font-medium uppercase tracking-[0.35em] text-teal-200">Typing room</p>
-        <h1 class="mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl">Public-domain prose practice</h1>
-      </div>
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-xs font-medium uppercase tracking-[0.35em] text-teal-200">Practice</div>
 
       <div class="flex flex-col gap-2 sm:items-end">
         <div class="flex shrink-0 flex-wrap gap-2" aria-label="Category">
@@ -63,6 +60,16 @@
         <span class="flex flex-wrap items-baseline gap-x-[0.55ch] gap-y-3 font-mono text-2xl leading-[1.65] tracking-normal text-slate-500 sm:text-3xl" data-typing-target="text"></span>
       </span>
     </button>
+
+    <div class="mt-4 hidden rounded-2xl border border-amber-300/15 bg-amber-300/[0.06] px-4 py-3" data-typing-target="slowPairPanel">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.24em] text-amber-100/80">Slow combinations</p>
+          <p class="mt-1 text-xs text-slate-500">Heat map uses correct adjacent key presses; long pauses and corrected pairs are filtered.</p>
+        </div>
+        <div class="flex flex-wrap gap-2" data-typing-target="slowPairList"></div>
+      </div>
+    </div>
 
     <div class="mt-5 rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3" aria-label="Race progress">
       <% [["slow", "🐢", "slowRacer"], ["you", "⌨️", "userRacer"], ["fast", "🚀", "fastRacer"]].each do |label, glyph, target| %>

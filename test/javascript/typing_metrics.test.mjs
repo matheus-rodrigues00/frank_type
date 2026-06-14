@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { calculateMetrics, summarizeWords } from "../../app/javascript/lib/typing/metrics.js"
+import { calculateMetrics, summarizeDigraphs, summarizeWords } from "../../app/javascript/lib/typing/metrics.js"
 
 test("calculateMetrics returns wpm accuracy and mistakes", () => {
   const metrics = calculateMetrics({
@@ -46,4 +46,38 @@ test("summarizeWords groups character timings by word", () => {
 
   assert.equal(words[1].word, "two")
   assert.equal(words[1].correct, false)
+})
+
+test("summarizeDigraphs ranks correct adjacent character pairs", () => {
+  const summary = summarizeDigraphs({
+    characterTimings: [
+      { index: 0, expected: "t", correct: true, elapsedMs: 0 },
+      { index: 1, expected: "h", correct: true, elapsedMs: 180 },
+      { index: 2, expected: "e", correct: true, elapsedMs: 240 },
+      { index: 3, expected: " ", correct: true, elapsedMs: 520 },
+      { index: 4, expected: "m", correct: true, elapsedMs: 610 }
+    ],
+    keyEvents: []
+  })
+
+  assert.equal(summary.samples.length, 4)
+  assert.equal(summary.rankedPairs[0].displayPair, "e␠")
+  assert.equal(summary.rankedPairs[0].medianLatencyMs, 280)
+  assert(summary.samples.some((sample) => sample.heat > 0))
+})
+
+test("summarizeDigraphs filters mistakes corrections and long pauses", () => {
+  const summary = summarizeDigraphs({
+    characterTimings: [
+      { index: 0, expected: "a", correct: true, elapsedMs: 0 },
+      { index: 1, expected: "b", correct: false, elapsedMs: 100 },
+      { index: 2, expected: "c", correct: true, elapsedMs: 260 },
+      { index: 3, expected: "d", correct: true, elapsedMs: 1900 },
+      { index: 4, expected: "e", correct: true, elapsedMs: 2020 },
+      { index: 5, expected: "f", correct: true, elapsedMs: 2300 }
+    ],
+    keyEvents: [{ action: "backspace", elapsedMs: 2100 }]
+  })
+
+  assert.deepEqual(summary.samples.map((sample) => sample.pair), ["de"])
 })

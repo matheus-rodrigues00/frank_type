@@ -1,4 +1,4 @@
-import { calculateMetrics, summarizeWords } from "lib/typing/metrics"
+import { calculateMetrics, summarizeDigraphs, summarizeWords } from "lib/typing/metrics"
 
 export class TypingSessionState {
   constructor({ excerpt, durationSeconds }) {
@@ -92,8 +92,16 @@ export class TypingSessionState {
     })
   }
 
+  digraphSummary() {
+    return summarizeDigraphs({
+      characterTimings: this.characterTimings,
+      keyEvents: this.keyEvents
+    })
+  }
+
   toResult() {
     const metrics = this.currentMetrics()
+    const digraphSummary = this.digraphSummary()
 
     return {
       id: crypto.randomUUID(),
@@ -107,6 +115,8 @@ export class TypingSessionState {
       elapsedMs: Math.round(this.elapsedMs),
       metrics,
       characterTimings: this.characterTimings,
+      digraphTimings: digraphSummary.samples,
+      slowPairs: digraphSummary.rankedPairs,
       wordTimings: summarizeWords({ text: this.targetText, characterTimings: this.characterTimings }),
       keyEvents: this.keyEvents
     }

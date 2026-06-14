@@ -40,3 +40,91 @@ export function summarizeWords({ text, characterTimings }) {
 
   return summaries
 }
+
+export function summarizeDigraphs({ characterTimings = [], keyEvents = [], minLatencyMs = 30, maxLatencyMs = 1200 } = {}) {
+  const backspaces = keyEvents.filter((event) => event.action === "backspace")
+  const samples = []
+
+  for (let index = 1; index < characterTimings.length; index += 1) {
+    const previous = characterTimings[index - 1]
+    const current = characterTimings[index]
+
+    if (current.index !== previous.index + 1) continue
+    if (!previous.correct || !current.correct) continue
+
+    const latencyMs = current.elapsedMs - previous.elapsedMs
+    if (latencyMs < minLatencyMs || latencyMs > maxLatencyMs) continue
+    if (hasCorrectionBetween(backspaces, previous.elapsedMs, current.elapsedMs)) continue
+
+    samples.push({
+      pair: `${previous.expected}${current.expected}`,
+      displayPair: displayPair(`${previous.expected}${current.expected}`),
+      startIndex: previous.index,
+      endIndex: current.index,
+      latencyMs
+    })
+  }
+
+  const latencies = samples.map((sample) => sample.latencyMs).sort((left, right) => left - right)
+  const baseline = median(latencies)
+  const high = Math.max(percentile(latencies, 0.9), baseline + 1)
+  const heatedSamples = samples.map((sample) => ({
+    ...sample,
+    heat: sample.latencyMs <= baseline ? 0 : clamp((sample.latencyMs - baseline) / (high - baseline))
+  }))
+
+  return {
+    samples: heatedSamples,
+    rankedPairs: rankPairs(heatedSamples),
+    medianLatencyMs: baseline
+  }
+}
+
+export function displayPair(pair) {
+  return pair.replaceAll(" ", "␠")
+}
+
+function rankPairs(samples) {
+  const groups = new Map()
+
+  samples.forEach((sample) => {
+    if (!groups.has(sample.pair)) groups.set(sample.pair, [])
+    groups.get(sample.pair).push(sample)
+  })
+
+  return [...groups.entries()]
+    .map(([pair, pairSamples]) => {
+      const latencies = pairSamples.map((sample) => sample.latencyMs).sort((left, right) => left - right)
+
+      return {
+        pair,
+        displayPair: displayPair(pair),
+        count: pairSamples.length,
+        medianLatencyMs: median(latencies),
+        maxLatencyMs: Math.max(...latencies),
+        heat: Math.max(...pairSamples.map((sample) => sample.heat))
+      }
+    })
+    .sort((left, right) => right.medianLatencyMs - left.medianLatencyMs)
+}
+
+function hasCorrectionBetween(backspaces, previousElapsedMs, currentElapsedMs) {
+  return backspaces.some((event) => event.elapsedMs > previousElapsedMs && event.elapsedMs < currentElapsedMs)
+}
+
+function median(values) {
+  if (values.length === 0) return 0
+
+  const middle = Math.floor(values.length / 2)
+  return values.length % 2 === 0 ? Math.round((values[middle - 1] + values[middle]) / 2) : values[middle]
+}
+
+function percentile(values, ratio) {
+  if (values.length === 0) return 0
+
+  return values[Math.min(values.length - 1, Math.floor((values.length - 1) * ratio))]
+}
+
+function clamp(value) {
+  return Math.max(0, Math.min(value, 1))
+}

@@ -18,6 +18,8 @@ export default class extends Controller {
     "progress",
     "results",
     "resultSummary",
+    "slowPairList",
+    "slowPairPanel",
     "source",
     "slowRacer",
     "stateLabel",
@@ -179,21 +181,25 @@ export default class extends Controller {
     this.progressTarget.textContent = `${this.session.cursor}/${this.session.targetText.length}`
     this.sourceTarget.textContent = `${this.currentExcerpt.title} · ${this.currentExcerpt.author}`
     this.stateLabelTarget.textContent = this.session.finished ? "complete" : this.session.started ? "typing" : "click here and start typing"
-    this.textTarget.replaceChildren(...this.characterSpans())
+    const digraphSummary = this.session.digraphSummary()
+    this.textTarget.replaceChildren(...this.characterSpans(digraphSummary))
+    this.renderSlowPairs(digraphSummary)
     this.scrollCursorIntoView()
     this.renderRaceTrack(metrics)
   }
 
-  characterSpans() {
+  characterSpans(digraphSummary) {
     const words = []
     let word = document.createElement("span")
     word.className = "inline-flex whitespace-nowrap"
+    const heatByIndex = this.heatByCharacterIndex(digraphSummary)
 
     ;[...this.session.targetText].forEach((expected, index) => {
       const actual = this.session.typedCharacters[index]
       const span = document.createElement("span")
       span.textContent = expected === " " ? " " : expected
       span.className = this.characterClass({ expected, actual, index })
+      this.applyHeat(span, heatByIndex.get(index))
       if (index === this.session.cursor) span.dataset.current = "true"
       word.appendChild(span)
 
@@ -207,6 +213,34 @@ export default class extends Controller {
     if (word.childNodes.length > 0) words.push(word)
 
     return words
+  }
+
+  heatByCharacterIndex(digraphSummary) {
+    const heatByIndex = new Map()
+
+    digraphSummary.samples.forEach((sample) => {
+      if (sample.heat <= 0) return
+
+      ;[sample.startIndex, sample.endIndex].forEach((index) => {
+        const current = heatByIndex.get(index)
+        if (!current || sample.heat > current.heat) heatByIndex.set(index, sample)
+      })
+    })
+
+    return heatByIndex
+  }
+
+  applyHeat(span, sample) {
+    if (!sample) return
+
+    const alpha = 0.16 + (sample.heat * 0.5)
+    const red = Math.round(251 + (239 - 251) * sample.heat)
+    const green = Math.round(191 + (68 - 191) * sample.heat)
+    const blue = Math.round(36 + (68 - 36) * sample.heat)
+
+    span.style.backgroundColor = `rgba(${red}, ${green}, ${blue}, ${alpha})`
+    span.style.boxShadow = `0 0 ${Math.round(4 + sample.heat * 10)}px rgba(${red}, ${green}, ${blue}, ${alpha / 1.4})`
+    span.title = `${sample.displayPair}: ${sample.latencyMs}ms`
   }
 
   characterClass({ expected, actual, index }) {
@@ -242,6 +276,23 @@ export default class extends Controller {
     this.moveRacer(this.slowRacerTarget, progress.slow)
     this.moveRacer(this.userRacerTarget, progress.user)
     this.moveRacer(this.fastRacerTarget, progress.fast)
+  }
+
+  renderSlowPairs(digraphSummary) {
+    const rankedPairs = digraphSummary.rankedPairs
+      .filter((pair) => pair.heat > 0)
+      .slice(0, 5)
+
+    this.slowPairPanelTarget.classList.toggle("hidden", rankedPairs.length === 0)
+    this.slowPairListTarget.replaceChildren(...rankedPairs.map((pair) => this.slowPairElement(pair, digraphSummary.medianLatencyMs)))
+  }
+
+  slowPairElement(pair, baselineMs) {
+    const element = document.createElement("span")
+    element.className = "rounded-full border border-amber-200/20 bg-slate-950/50 px-3 py-1 font-mono text-xs text-amber-100"
+    element.textContent = `${pair.displayPair} ${pair.medianLatencyMs}ms`
+    element.title = `${pair.displayPair}: median ${pair.medianLatencyMs}ms, ${pair.count} sample${pair.count === 1 ? "" : "s"}, ${Math.max(0, pair.medianLatencyMs - baselineMs)}ms over session median`
+    return element
   }
 
   moveRacer(racer, progress) {
