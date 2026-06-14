@@ -1,0 +1,15 @@
+name: frank_type
+
+services:
+  web:
+    image: akitaonrails/frank_type:latest
+    container_name: frank-type-web
+    restart: always
+    ports:
+      - "3200:80"
+    volumes:
+      - /var/opt/docker/frank_type/storage:/rails/storage
+    security_opt:
+      - label:disable
+    env_file:
+      - .env.production
