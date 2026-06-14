@@ -17,7 +17,8 @@ export default class extends Controller {
     "helpOverlay",
     "progress",
     "results",
-    "resultSummary",
+    "resultDetails",
+    "resultWpm",
     "slowPairList",
     "slowPairPanel",
     "source",
@@ -190,7 +191,8 @@ export default class extends Controller {
     this.render()
     this.scrollTextToTop({ smooth: true })
     this.resultsTarget.classList.remove("hidden")
-    this.resultSummaryTarget.textContent = `${result.metrics.wpm} WPM · ${result.metrics.accuracy}% accuracy · ${result.metrics.typedCharacters} keystrokes captured`
+    this.resultWpmTarget.textContent = result.metrics.wpm
+    this.resultDetailsTarget.textContent = `${result.metrics.accuracy}% accuracy · ${result.metrics.typedCharacters} keystrokes captured`
   }
 
   render() {
