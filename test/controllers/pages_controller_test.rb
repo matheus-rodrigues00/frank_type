@@ -6,7 +6,7 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "[data-controller='typing']"
-    assert_select "h1", text: /Real prose/
+    assert_select "h1", text: /Public-domain prose practice/
   end
 
   test "profile renders local dashboard" do

@@ -148,21 +148,36 @@ export default class extends Controller {
   }
 
   characterSpans() {
-    return [...this.session.targetText].map((expected, index) => {
+    const words = []
+    let word = document.createElement("span")
+    word.className = "inline-flex whitespace-nowrap"
+
+    ;[...this.session.targetText].forEach((expected, index) => {
       const actual = this.session.typedCharacters[index]
       const span = document.createElement("span")
-      span.textContent = expected === " " ? "·" : expected
+      span.textContent = expected === " " ? " " : expected
       span.className = this.characterClass({ expected, actual, index })
-      return span
+      word.appendChild(span)
+
+      if (expected === " ") {
+        words.push(word)
+        word = document.createElement("span")
+        word.className = "inline-flex whitespace-nowrap"
+      }
     })
+
+    if (word.childNodes.length > 0) words.push(word)
+
+    return words
   }
 
   characterClass({ expected, actual, index }) {
-    const base = "relative rounded px-0.5 transition-colors "
-    if (index === this.session.cursor && !this.session.finished) return `${base}bg-teal-300/25 text-white after:absolute after:-bottom-1 after:left-0 after:h-1 after:w-full after:rounded-full after:bg-teal-300`
-    if (actual === undefined) return `${base}text-slate-500`
-    if (actual === expected) return `${base}text-teal-100`
-    return `${base}bg-rose-400/20 text-rose-200`
+    const base = "relative inline-block rounded px-px transition-colors "
+    const spacing = expected === " " ? "w-[0.65ch] " : ""
+    if (index === this.session.cursor && !this.session.finished) return `${base}${spacing}bg-teal-300/25 text-white after:absolute after:-bottom-1 after:left-0 after:h-1 after:w-full after:rounded-full after:bg-teal-300`
+    if (actual === undefined) return `${base}${spacing}text-slate-500`
+    if (actual === expected) return `${base}${spacing}text-teal-100`
+    return `${base}${spacing}bg-rose-400/20 text-rose-200`
   }
 
   updateDurationButtons() {
