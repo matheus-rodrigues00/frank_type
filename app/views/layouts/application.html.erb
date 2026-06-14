@@ -15,8 +15,7 @@
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
@@ -26,7 +25,7 @@
   <body class="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.22),_transparent_30rem),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.18),_transparent_28rem),#020617] antialiased selection:bg-teal-300 selection:text-slate-950">
     <header class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
       <%= link_to root_path, class: "group inline-flex items-center gap-3" do %>
-        <span class="grid size-10 place-items-center rounded-2xl bg-teal-400 text-lg font-black text-slate-950 shadow-lg shadow-teal-400/20 transition group-hover:rotate-3">ft</span>
+        <%= image_tag "/logo.png", alt: "Frank Type", class: "size-12 rounded-2xl shadow-lg shadow-teal-400/20 transition group-hover:rotate-3" %>
         <span>
           <span class="block text-sm font-semibold uppercase tracking-[0.34em] text-teal-200">Frank Type</span>
           <span class="block text-xs text-slate-400">public-domain typing practice</span>

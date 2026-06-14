@@ -35,6 +35,7 @@ export default class extends Controller {
     this.durationSeconds = 30
     this.selectedCategory = "random"
     this.excerptIndex = this.randomCompatibleExcerptIndex()
+    this.lastScrolledLineTop = null
     this.timer = null
 
     this.resetSession()
@@ -136,6 +137,8 @@ export default class extends Controller {
     this.stopTicker()
     this.resultsTarget.classList.add("hidden")
     this.session = new TypingSessionState({ excerpt: this.currentExcerpt, durationSeconds: this.durationSeconds })
+    this.lastScrolledLineTop = null
+    this.textScrollerTarget.scrollTop = 0
     this.updateDurationButtons()
     this.updateCategoryButtons()
     this.render()
@@ -303,7 +306,22 @@ export default class extends Controller {
     const current = this.textTarget.querySelector("[data-current='true']")
     if (!current) return
 
-    current.scrollIntoView({ block: "nearest", inline: "nearest" })
+    const scroller = this.textScrollerTarget
+    const currentLineTop = current.offsetTop
+    const currentLineBottom = currentLineTop + current.offsetHeight
+    const halfwayPoint = scroller.scrollTop + (scroller.clientHeight / 2)
+
+    if (currentLineBottom <= halfwayPoint) return
+    if (this.lastScrolledLineTop === currentLineTop) return
+
+    this.lastScrolledLineTop = currentLineTop
+    scroller.scrollBy({ top: this.lineScrollAmount(), behavior: "smooth" })
+  }
+
+  lineScrollAmount() {
+    const computedStyle = window.getComputedStyle(this.textTarget)
+    const lineHeight = Number.parseFloat(computedStyle.lineHeight)
+    return Number.isFinite(lineHeight) ? lineHeight : 48
   }
 
   randomCompatibleExcerptIndex({ except = null } = {}) {
