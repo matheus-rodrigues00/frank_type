@@ -7,6 +7,8 @@ module Typing
 
       assert_not_empty excerpts
       assert excerpts.all? { |excerpt| excerpt.id.present? }
+      assert excerpts.any? { |excerpt| excerpt.author == "Isaac Asimov" }
+      assert excerpts.all? { |excerpt| excerpt.source.match?(/Project Gutenberg ebook #\d+/) }
       assert excerpts.all? { |excerpt| excerpt.source_url.start_with?("https://www.gutenberg.org/ebooks/") }
       assert excerpts.all? { |excerpt| excerpt.normalized_text.match?(/\A[a-z0-9 ]+\z/) }
       assert excerpts.all? { |excerpt| excerpt.word_count.positive? }

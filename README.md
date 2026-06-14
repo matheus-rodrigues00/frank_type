@@ -6,6 +6,7 @@ A small Rails 8 + Hotwire + Stimulus typing trainer inspired by monkeytype, but 
 
 - Rails-rendered pages with Tailwind CSS, Turbo, and Stimulus.
 - A responsive typing room with 15s, 30s, and 60s sessions.
+- Random excerpt selection on page load and when pressing `Tab`.
 - Accurate browser-side key timing using `performance.now()`.
 - Per-session metrics: WPM, raw WPM, accuracy, mistakes, character timings, word timings, and full key event history.
 - No authentication. Completed session data is stored in local storage.
@@ -35,7 +36,9 @@ bin/rails tailwindcss:build
 
 Use Project Gutenberg as the canonical source, but do not scrape its human-facing pages. Ingestion should use official feeds, robot harvest URLs, rsync mirrors, or Gutendex metadata. Store title, author, ebook id, source URL, copyright flag, and attribution with every excerpt.
 
-Current seed excerpts are attributed public-domain passages and normalized into lowercase alphanumeric word streams.
+Current seed excerpts are Asimov-first public-domain Project Gutenberg passages, plus AI/automation-adjacent classics such as _R.U.R._ and _The Machine Stops_. They are normalized into lowercase alphanumeric word streams.
+
+Note: famous Asimov works such as _Foundation_ and _I, Robot_ are not public-domain Project Gutenberg texts, so the seed corpus uses the Asimov stories that are available there.
 
 ## Docker
 

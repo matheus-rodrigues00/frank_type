@@ -24,8 +24,7 @@ export default class extends Controller {
 
   connect() {
     this.durationSeconds = 30
-    this.excerptIndex = Math.floor(Math.random() * this.excerptsValue.length)
-    this.pendingTabRestart = false
+    this.excerptIndex = this.randomExcerptIndex()
     this.timer = null
 
     this.resetSession()
@@ -46,39 +45,14 @@ export default class extends Controller {
   }
 
   keydown(event) {
-    if (event.key === "?") {
+    if (["?", "Escape", "Tab"].includes(event.key)) {
       event.preventDefault()
-      event.stopPropagation()
-      this.openHelp()
-      return
-    }
-
-    if (event.key === "Escape") {
-      event.preventDefault()
-      this.closeHelp()
       return
     }
 
     if (event.ctrlKey || event.metaKey) {
-      this.handleShortcut(event)
       return
     }
-
-    if (this.pendingTabRestart && event.key === "Enter") {
-      event.preventDefault()
-      this.pendingTabRestart = false
-      this.resetSession()
-      return
-    }
-
-    if (event.key === "Tab") {
-      event.preventDefault()
-      this.pendingTabRestart = true
-      this.stateLabelTarget.textContent = "press Enter to restart"
-      return
-    }
-
-    this.pendingTabRestart = false
 
     if (event.key === "Backspace") {
       event.preventDefault()
@@ -101,11 +75,22 @@ export default class extends Controller {
     if (event.key === "?") {
       event.preventDefault()
       this.openHelp()
+      return
     }
 
     if (event.key === "Escape") {
       event.preventDefault()
-      this.closeHelp()
+      if (this.helpIsOpen()) {
+        this.closeHelp()
+      } else {
+        this.resetSession()
+      }
+      return
+    }
+
+    if (event.key === "Tab") {
+      event.preventDefault()
+      if (!this.helpIsOpen()) this.nextExcerpt()
     }
   }
 
@@ -120,24 +105,14 @@ export default class extends Controller {
     this.focus()
   }
 
+  helpIsOpen() {
+    return !this.helpOverlayTarget.classList.contains("hidden")
+  }
+
   closeHelpFromBackdrop(event) {
     if (event.target !== event.currentTarget) return
 
     this.closeHelp()
-  }
-
-  handleShortcut(event) {
-    const key = event.key.toLowerCase()
-
-    if (key === "r") {
-      event.preventDefault()
-      this.resetSession()
-    }
-
-    if (key === "n") {
-      event.preventDefault()
-      this.nextExcerpt()
-    }
   }
 
   resetSession() {
@@ -146,11 +121,22 @@ export default class extends Controller {
     this.session = new TypingSessionState({ excerpt: this.currentExcerpt, durationSeconds: this.durationSeconds })
     this.updateDurationButtons()
     this.render()
+    this.focus()
   }
 
   nextExcerpt() {
-    this.excerptIndex = (this.excerptIndex + 1) % this.excerptsValue.length
+    this.excerptIndex = this.randomExcerptIndex({ except: this.excerptIndex })
     this.resetSession()
+  }
+
+  randomExcerptIndex({ except = null } = {}) {
+    if (this.excerptsValue.length <= 1) return 0
+
+    let index = except
+    while (index === except) {
+      index = Math.floor(Math.random() * this.excerptsValue.length)
+    }
+    return index
   }
 
   startTicker() {
