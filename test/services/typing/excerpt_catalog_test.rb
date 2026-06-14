@@ -15,7 +15,7 @@ module Typing
       assert excerpts.all? { |excerpt| excerpt.source_url.start_with?("https://www.gutenberg.org/ebooks/") }
       assert excerpts.all? { |excerpt| excerpt.normalized_text.match?(/\A[a-z0-9 ]+\z/) }
       assert excerpts.all? { |excerpt| excerpt.word_count >= 70 }
-      assert excerpts.group_by { |excerpt| [ excerpt.category, excerpt.speed_band ] }.values.all? { |group| group.size >= 3 }
+      assert excerpts.group_by { |excerpt| [ excerpt.category, excerpt.speed_band ] }.values.all? { |group| group.size >= 10 }
     end
 
     test "exports browser-safe json without original prose payload" do
