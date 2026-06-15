@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { backwardDeletionIntent } from "lib/typing/deletion"
 import { raceProgress } from "lib/typing/race_progress"
 import { TypingSessionState } from "lib/typing/session_state"
 import { preferredSpeedBand, randomExcerptIndex } from "lib/typing/speed_band"
@@ -104,16 +105,15 @@ export default class extends Controller {
       return
     }
 
-    if (event.ctrlKey || event.metaKey) {
-      return
-    }
-
-    if (event.key === "Backspace") {
+    const deletionIntent = backwardDeletionIntent(event)
+    if (deletionIntent) {
       event.preventDefault()
-      this.session.backspace()
+      this.backspace(deletionIntent)
       this.render()
       return
     }
+
+    if (event.ctrlKey || event.metaKey) return
 
     if (event.key.length !== 1 || event.altKey) return
 
@@ -124,6 +124,41 @@ export default class extends Controller {
     this.render()
 
     if (this.session.shouldFinish()) this.finishSession()
+  }
+
+  backspace(intent = "character") {
+    if (intent === "start") {
+      this.session.backspaceToIndex(this.currentVisualLineStartIndex())
+      return
+    }
+
+    if (intent === "word") {
+      this.session.backspacePreviousWord()
+      return
+    }
+
+    this.session.backspace()
+  }
+
+  currentVisualLineStartIndex() {
+    if (this.session.cursor === 0) return 0
+
+    const referenceIndex = Math.min(this.session.cursor, this.session.targetText.length - 1)
+    const referenceSpan = this.characterSpanForIndex(referenceIndex) || this.characterSpanForIndex(referenceIndex - 1)
+    if (!referenceSpan) return 0
+
+    const referenceTop = Math.round(referenceSpan.getBoundingClientRect().top)
+    const lineSpans = [...this.textTarget.querySelectorAll("[data-character-index]")]
+      .filter((span) => Math.round(span.getBoundingClientRect().top) === referenceTop)
+
+    const firstLineIndex = Number.parseInt(lineSpans.at(0)?.dataset.characterIndex, 10)
+    return Number.isFinite(firstLineIndex) ? Math.min(firstLineIndex, this.session.cursor) : 0
+  }
+
+  characterSpanForIndex(index) {
+    if (index < 0) return null
+
+    return this.textTarget.querySelector(`[data-character-index="${index}"]`)
   }
 
   globalKeydown(event) {
@@ -258,6 +293,7 @@ export default class extends Controller {
       const span = document.createElement("span")
       span.textContent = expected === " " ? " " : expected
       span.className = this.characterClass({ expected, actual, index })
+      span.dataset.characterIndex = index
       this.applyHeat(span, heatByIndex.get(index))
       if (index === this.session.cursor) span.dataset.current = "true"
       word.appendChild(span)

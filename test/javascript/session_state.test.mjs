@@ -44,6 +44,43 @@ test("TypingSessionState resumes when backspacing after a pause", async () => {
   assert.equal(session.keyEvents.at(-1).elapsedMs, 1000)
 })
 
+test("TypingSessionState can delete the previous word", async () => {
+  const { TypingSessionState } = await loadSessionState()
+  const session = new TypingSessionState({ excerpt: excerpt("hello world again"), durationSeconds: 30 })
+
+  typeText(session, "hello world", 1000)
+
+  assert.equal(session.backspacePreviousWord(3000), 5)
+  assert.equal(session.typedCharacters.join(""), "hello ")
+  assert.equal(session.cursor, 6)
+  assert.deepEqual(session.characterTimings.map((timing) => timing.index), [0, 1, 2, 3, 4, 5])
+  assert.equal(session.keyEvents.filter((event) => event.action === "backspace").length, 5)
+})
+
+test("TypingSessionState deletes the previous word from target text boundaries", async () => {
+  const { TypingSessionState } = await loadSessionState()
+  const session = new TypingSessionState({ excerpt: excerpt("hello world"), durationSeconds: 30 })
+
+  typeText(session, "helloxworld", 1000)
+
+  assert.equal(session.backspacePreviousWord(3000), 5)
+  assert.equal(session.typedCharacters.join(""), "hellox")
+  assert.deepEqual(session.characterTimings.map((timing) => timing.index), [0, 1, 2, 3, 4, 5])
+})
+
+test("TypingSessionState can delete to a target index", async () => {
+  const { TypingSessionState } = await loadSessionState()
+  const session = new TypingSessionState({ excerpt: excerpt("hello world"), durationSeconds: 30 })
+
+  typeText(session, "hello world", 1000)
+
+  assert.equal(session.backspaceToIndex(6, 3000), 5)
+  assert.equal(session.typedCharacters.join(""), "hello ")
+  assert.equal(session.cursor, 6)
+  assert.deepEqual(session.characterTimings.map((timing) => timing.index), [0, 1, 2, 3, 4, 5])
+  assert.equal(session.keyEvents.filter((event) => event.action === "backspace").length, 5)
+})
+
 test("TypingSessionState freezes remaining seconds while paused", async () => {
   const { TypingSessionState } = await loadSessionState()
   const session = new TypingSessionState({ excerpt: excerpt("abc"), durationSeconds: 10 })
@@ -71,13 +108,22 @@ function excerpt(normalizedText) {
   }
 }
 
+function typeText(session, text, firstTimestamp) {
+  ;[...text].forEach((character, index) => {
+    session.type(character, firstTimestamp + (index * 100))
+  })
+}
+
 async function loadSessionState() {
   const sourcePath = new URL("../../app/javascript/lib/typing/session_state.js", import.meta.url)
   const metricsPath = new URL("../../app/javascript/lib/typing/metrics.js", import.meta.url)
+  const deletionPath = new URL("../../app/javascript/lib/typing/deletion.js", import.meta.url)
   const source = await readFile(sourcePath, "utf8")
   const tempDirectory = await mkdtemp(join(tmpdir(), "frank-type-session-state-"))
   const modulePath = join(tempDirectory, "session_state.mjs")
-  const rewrittenSource = source.replace('from "lib/typing/metrics"', `from ${JSON.stringify(metricsPath.href)}`)
+  const rewrittenSource = source
+    .replace('from "lib/typing/metrics"', `from ${JSON.stringify(metricsPath.href)}`)
+    .replace('from "lib/typing/deletion"', `from ${JSON.stringify(deletionPath.href)}`)
 
   await writeFile(modulePath, rewrittenSource)
 

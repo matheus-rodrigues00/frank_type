@@ -1,4 +1,5 @@
 import { calculateMetrics, summarizeDigraphs, summarizeWords } from "lib/typing/metrics"
+import { previousWordDeletionCount } from "lib/typing/deletion"
 
 export class TypingSessionState {
   constructor({ excerpt, durationSeconds }) {
@@ -87,15 +88,31 @@ export class TypingSessionState {
     this.characterTimings.push({ index, expected, actual: character, correct, elapsedMs, wordIndex: wordIndexFor(this.targetText, index) })
   }
 
-  backspace(now = performance.now()) {
-    if (!this.started || this.finished || this.cursor === 0) return
+  backspace(now = performance.now(), count = 1) {
+    if (!this.started || this.finished || this.cursor === 0 || count <= 0) return 0
 
     this.resume(now)
-    const index = this.cursor - 1
+    const deletedCount = Math.min(count, this.cursor)
+    const firstDeletedIndex = this.cursor - deletedCount
     const elapsedMs = Math.round(now - this.startedAtPerformance - this.pausedSoFar(now))
-    this.keyEvents.push({ action: "backspace", index, elapsedMs })
-    this.typedCharacters.pop()
-    this.characterTimings = this.characterTimings.filter((timing) => timing.index !== index)
+
+    for (let index = this.cursor - 1; index >= firstDeletedIndex; index -= 1) {
+      this.keyEvents.push({ action: "backspace", index, elapsedMs })
+    }
+
+    this.typedCharacters.splice(firstDeletedIndex, deletedCount)
+    this.characterTimings = this.characterTimings.filter((timing) => timing.index < firstDeletedIndex)
+
+    return deletedCount
+  }
+
+  backspacePreviousWord(now = performance.now()) {
+    return this.backspace(now, previousWordDeletionCount(this.targetText, this.cursor))
+  }
+
+  backspaceToIndex(index, now = performance.now()) {
+    const targetIndex = Math.min(Math.max(index, 0), this.cursor)
+    return this.backspace(now, this.cursor - targetIndex)
   }
 
   shouldFinish() {
