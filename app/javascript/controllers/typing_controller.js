@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { backwardDeletionIntent } from "lib/typing/deletion"
+import { isDeletionInputType, isInsertInputType, normalizeTypedCharacters } from "lib/typing/input_text"
 import { raceProgress } from "lib/typing/race_progress"
 import { TypingSessionState } from "lib/typing/session_state"
 import { preferredSpeedBand, randomExcerptIndex } from "lib/typing/speed_band"
@@ -13,6 +14,7 @@ export default class extends Controller {
 
   static targets = [
     "accuracy",
+    "captureInput",
     "categoryButton",
     "durationButton",
     "fastRacer",
@@ -41,6 +43,7 @@ export default class extends Controller {
     this.excerptIndex = this.randomCompatibleExcerptIndex()
     this.lastScrolledLineTop = null
     this.timer = null
+    this.composing = false
 
     this.resetSession()
     this.focus()
@@ -51,7 +54,7 @@ export default class extends Controller {
   }
 
   focus() {
-    this.typingSurfaceTarget.focus()
+    this.captureInputTarget.focus()
   }
 
   surfaceBlurred() {
@@ -106,22 +109,41 @@ export default class extends Controller {
     }
 
     const deletionIntent = backwardDeletionIntent(event)
-    if (deletionIntent) {
-      event.preventDefault()
-      this.backspace(deletionIntent)
-      this.render()
-      return
-    }
-
-    if (event.ctrlKey || event.metaKey) return
-
-    if (event.key.length !== 1 || event.altKey) return
+    if (!deletionIntent) return
 
     event.preventDefault()
+    this.backspace(deletionIntent)
+    this.render()
+  }
+
+  beforeInput(event) {
+    if (isDeletionInputType(event.inputType)) return
+    if (this.composing || event.isComposing) return
+
+    event.preventDefault()
+
+    if (isInsertInputType(event.inputType)) this.commitTypedText(event.data)
+  }
+
+  compositionStart() {
+    this.composing = true
+  }
+
+  compositionEnd(event) {
+    this.composing = false
+    this.commitTypedText(event.data)
+  }
+
+  commitTypedText(data) {
     this.hidePausedOverlay()
-    this.session.type(event.key.toLowerCase())
+
+    for (const character of normalizeTypedCharacters(data)) {
+      this.session.type(character)
+    }
+
     this.startTicker()
     this.render()
+    this.captureInputTarget.value = ""
 
     if (this.session.shouldFinish()) this.finishSession()
   }

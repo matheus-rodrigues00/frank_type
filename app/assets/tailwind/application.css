@@ -218,7 +218,11 @@
     --tw-ring-color: var(--color-focus);
   }
 
-  .typing-surface:focus {
+  .typing-capture-input {
+    @apply pointer-events-none absolute inset-0 m-0 h-full w-full resize-none border-0 bg-transparent p-0 text-transparent caret-transparent opacity-0 outline-none;
+  }
+
+  .typing-surface:focus-within {
     border-color: var(--color-accent-border);
     box-shadow: 0 0 0 4px var(--color-focus);
   }

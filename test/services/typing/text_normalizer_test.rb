@@ -15,5 +15,23 @@ module Typing
         TextNormalizer.call(" Hello,   world... again? ")
       )
     end
+
+    test "preserves Brazilian Portuguese accents under the pt-BR locale" do
+      assert_equal(
+        "coração açúcar não",
+        TextNormalizer.call("Coração — açúcar, NÃO!", locale: "pt-BR")
+      )
+    end
+
+    test "default locale still strips accents to ascii" do
+      assert_equal "cafe", TextNormalizer.call("Café")
+    end
+
+    test "pt-BR output is NFC and keeps the accented word intact" do
+      result = TextNormalizer.call("Coração", locale: "pt-BR")
+
+      assert_equal result, result.unicode_normalize(:nfc)
+      assert_includes result, "coração"
+    end
   end
 end

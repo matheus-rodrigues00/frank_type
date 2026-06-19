@@ -98,6 +98,28 @@ test("TypingSessionState freezes remaining seconds while paused", async () => {
   })
 })
 
+test("TypingSessionState counts accented characters that match the target", async () => {
+  const { TypingSessionState } = await loadSessionState()
+  const session = new TypingSessionState({ excerpt: excerpt("ção"), durationSeconds: 30 })
+
+  typeText(session, "ção", 1000)
+
+  assert.equal(session.cursor, 3)
+  assert.equal(session.correctCharacters, 3)
+  assert.ok(session.characterTimings.every((timing) => timing.correct))
+})
+
+test("TypingSessionState treats a base letter as a mistake for an accented target", async () => {
+  const { TypingSessionState } = await loadSessionState()
+  const session = new TypingSessionState({ excerpt: excerpt("á"), durationSeconds: 30 })
+
+  session.type("a", 1000)
+
+  assert.equal(session.cursor, 1)
+  assert.equal(session.characterTimings[0].correct, false)
+  assert.equal(session.keyEvents[0].correct, false)
+})
+
 function excerpt(normalizedText) {
   return {
     id: "test-excerpt",
