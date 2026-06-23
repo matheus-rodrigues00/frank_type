@@ -44,21 +44,18 @@
     <div
       class="typing-surface"
       data-typing-target="typingSurface"
-      data-action="click->typing#focus"
+      data-action="click->typing#focus keydown->typing#keydown focusin->typing#surfaceFocused focusout->typing#surfaceBlurred"
     >
-      <input
-        type="text"
-        class="typing-capture-input"
-        data-typing-target="captureInput"
-        data-action="keydown->typing#keydown beforeinput->typing#beforeInput compositionstart->typing#compositionStart compositionend->typing#compositionEnd focus->typing#surfaceFocused blur->typing#surfaceBlurred"
+      <textarea
+        class="typing-input-sink"
+        data-typing-target="inputSink"
+        data-action="beforeinput->typing#beforeInput input->typing#inputChanged paste->typing#blockBulkInput drop->typing#blockBulkInput"
         autocomplete="off"
-        autocorrect="off"
         autocapitalize="off"
+        autocorrect="off"
         spellcheck="false"
-        inputmode="text"
-        tabindex="0"
         aria-label="<%= t("pages.practice.typing_area_label") %>"
-      >
+      ></textarea>
       <span class="typing-paused-overlay hidden" data-typing-target="pausedOverlay" aria-hidden="true">
         <span class="typing-paused-hint"><%= t("pages.practice.paused_hint") %></span>
       </span>

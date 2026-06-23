@@ -1,26 +1,23 @@
 module Typing
   class TextNormalizer
-    ACCENTED_LOCALES = { "pt-BR" => "àáâãçéêíóôõúü" }.freeze
-
-    def self.call(text, locale: nil)
+    def self.call(text, locale: I18n.locale)
       new(text, locale: locale).call
     end
 
-    def initialize(text, locale: nil)
+    def initialize(text, locale: I18n.locale)
       @text = text.to_s
-      @locale = locale
+      @locale = locale.to_s.presence || I18n.default_locale.to_s
     end
 
     def call
-      accents = ACCENTED_LOCALES[@locale.to_s]
-      return normalize_ascii if accents.nil?
+      return normalize_portuguese if @locale == "pt-BR"
 
-      normalize_with_accents(accents)
+      normalize_english
     end
 
     private
 
-    def normalize_ascii
+    def normalize_english
       @text
         .unicode_normalize(:nfkc)
         .then { |value| I18n.transliterate(value) }
@@ -30,12 +27,12 @@ module Typing
         .strip
     end
 
-    def normalize_with_accents(accents)
+    def normalize_portuguese
       @text
         .unicode_normalize(:nfc)
         .downcase
-        .gsub(/[^a-z0-9#{Regexp.escape(accents)}\s]/, " ")
-        .squeeze(" ")
+        .gsub(/[^\p{L}\p{N}\s]/, " ")
+        .gsub(/\s+/, " ")
         .strip
     end
   end

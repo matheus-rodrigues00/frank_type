@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { backwardDeletionIntent } from "lib/typing/deletion"
-import { isDeletionInputType, isInsertInputType, normalizeTypedCharacters } from "lib/typing/input_text"
+import { bulkInputEvent, clearInputSink, committedTextFromBeforeInput, committedTextFromInput, shouldClearInputSinkAfterInput, unsupportedInputEvent } from "lib/typing/input_events"
 import { raceProgress } from "lib/typing/race_progress"
 import { TypingSessionState } from "lib/typing/session_state"
 import { preferredSpeedBand, randomExcerptIndex } from "lib/typing/speed_band"
@@ -14,11 +14,11 @@ export default class extends Controller {
 
   static targets = [
     "accuracy",
-    "captureInput",
     "categoryButton",
     "durationButton",
     "fastRacer",
     "helpOverlay",
+    "inputSink",
     "pausedOverlay",
     "progress",
     "results",
@@ -43,7 +43,6 @@ export default class extends Controller {
     this.excerptIndex = this.randomCompatibleExcerptIndex()
     this.lastScrolledLineTop = null
     this.timer = null
-    this.composing = false
 
     this.resetSession()
     this.focus()
@@ -54,10 +53,15 @@ export default class extends Controller {
   }
 
   focus() {
-    this.captureInputTarget.focus()
+    if (this.hasInputSinkTarget) {
+      this.inputSinkTarget.focus()
+    } else {
+      this.typingSurfaceTarget.focus()
+    }
   }
 
-  surfaceBlurred() {
+  surfaceBlurred(event) {
+    if (this.typingSurfaceTarget.contains(event.relatedTarget)) return
     if (!this.session.started || this.session.finished || this.session.paused) return
 
     this.session.pause()
@@ -109,41 +113,51 @@ export default class extends Controller {
     }
 
     const deletionIntent = backwardDeletionIntent(event)
-    if (!deletionIntent) return
+    if (deletionIntent) {
+      event.preventDefault()
+      this.backspace(deletionIntent)
+      this.render()
+      return
+    }
 
-    event.preventDefault()
-    this.backspace(deletionIntent)
-    this.render()
   }
 
   beforeInput(event) {
-    if (isDeletionInputType(event.inputType)) return
-    if (this.composing || event.isComposing) return
+    if (event.isComposing) return
 
-    event.preventDefault()
-
-    if (isInsertInputType(event.inputType)) this.commitTypedText(event.data)
-  }
-
-  compositionStart() {
-    this.composing = true
-  }
-
-  compositionEnd(event) {
-    this.composing = false
-    this.commitTypedText(event.data)
-  }
-
-  commitTypedText(data) {
-    this.hidePausedOverlay()
-
-    for (const character of normalizeTypedCharacters(data)) {
-      this.session.type(character)
+    if (bulkInputEvent(event) || unsupportedInputEvent(event)) {
+      event.preventDefault()
+      clearInputSink(this.inputSinkTarget)
+      return
     }
 
+    const text = committedTextFromBeforeInput(event)
+    if (!text) return
+    if (!event.cancelable) return
+
+    event.preventDefault()
+    this.typeText(text)
+    clearInputSink(this.inputSinkTarget)
+  }
+
+  inputChanged(event) {
+    const text = committedTextFromInput(event, event.currentTarget)
+    if (shouldClearInputSinkAfterInput(event)) clearInputSink(event.currentTarget)
+    if (!text) return
+
+    this.typeText(text)
+  }
+
+  blockBulkInput(event) {
+    event.preventDefault()
+    clearInputSink(this.inputSinkTarget)
+  }
+
+  typeText(text) {
+    this.hidePausedOverlay()
+    ;[...text].forEach((character) => this.session.type(character))
     this.startTicker()
     this.render()
-    this.captureInputTarget.value = ""
 
     if (this.session.shouldFinish()) this.finishSession()
   }

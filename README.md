@@ -99,7 +99,7 @@ GitHub Actions also publishes on pushes to `master`, tags matching `v*`, and man
 - Rails-rendered UI with Hotwire, Stimulus, Importmap, and Tailwind CSS.
 - Public-domain corpus organized for multiple languages: `config/excerpts/<language>/<category>/<speed>.yml`.
 - English and Brazilian Portuguese corpus categories: `scifi`, `fantasy`, and `biography`.
-- Brazilian Portuguese is practiced with its real accents (`àáâãçéêíóôõúü`); English practice stays ASCII only.
+- Brazilian Portuguese practice preserves accents/diacritics and is intended to train US-layout dead keys, Option accents, and other composed accent entry.
 - Locale-aware UI and corpus loading; normal requests load only the selected language.
 - Theme switcher with a preserved Slate theme and a logo-derived Rush palette.
 - Adaptive excerpt choice based on recent local WPM:
@@ -122,23 +122,6 @@ GitHub Actions also publishes on pushes to `master`, tags matching `v*`, and man
 | `?` | Open shortcut help |
 | `Esc` | Restart current run; closes help if help is open |
 | `Tab` | Load a random compatible excerpt |
-
-## Typing Brazilian Portuguese accents
-
-Brazilian Portuguese excerpts keep their accents, so you type the real words. Matching is strict: typing `a` where `á` is expected counts as a mistake. You can produce the accented characters from a US physical keyboard with a dead-key layout.
-
-macOS (US layout, Option keys):
-
-| Accent | Combo | Examples |
-| --- | --- | --- |
-| Acute | `Option+e` then the letter | `á`, `é`, `í`, `ó`, `ú` |
-| Circumflex | `Option+i` then the letter | `â`, `ê`, `ô` |
-| Tilde | `Option+n` then the letter | `ã`, `õ` |
-| Grave | `` Option+` `` then the letter | `à` |
-| Diaeresis | `Option+u` then the letter | `ü` |
-| Cedilla | `Option+c` | `ç` |
-
-Windows and Linux (US-International layout, dead keys): type the accent key then the letter, for example `'`+`a` gives `á`, `^`+`a` gives `â`, `~`+`a` gives `ã`, `` ` ``+`a` gives `à`, `"`+`u` gives `ü`, and `'`+`c` gives `ç`.
 
 ## Development without Docker
 

@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- Brazilian Portuguese practice now keeps accents, and accented input is supported on the US and US-International keyboard layouts.
+## [0.2.2] - 2026-06-19
+
+- Preserve Brazilian Portuguese accents in practice text and accept committed dead-key/Option-produced accented input through a focused text input sink.
 
 ## [0.2.1] - 2026-06-15
 

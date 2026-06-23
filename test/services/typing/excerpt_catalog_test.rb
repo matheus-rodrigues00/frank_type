@@ -13,8 +13,8 @@ module Typing
       assert excerpts.all? { |excerpt| excerpt.source.match?(/Project Gutenberg ebook #\d+/) }
       assert_equal [ "fast", "medium", "slow" ], excerpts.map(&:speed_band).uniq.sort
       assert excerpts.all? { |excerpt| excerpt.source_url.start_with?("https://www.gutenberg.org/ebooks/") }
-      assert excerpts.all? { |excerpt| excerpt.normalized_text.match?(normalized_text_pattern(excerpt.language)) }
-      assert excerpts.any? { |excerpt| excerpt.language == "pt-BR" && excerpt.normalized_text.match?(/[àáâãçéêíóôõúü]/) }
+      assert excerpts.select { |excerpt| excerpt.language == "en" }.all? { |excerpt| excerpt.normalized_text.match?(/\A[a-z0-9 ]+\z/) }
+      assert excerpts.select { |excerpt| excerpt.language == "pt-BR" }.all? { |excerpt| excerpt.normalized_text.match?(/\A[\p{L}\p{N} ]+\z/) }
       assert excerpts.all? { |excerpt| excerpt.word_count >= 70 }
       assert excerpts.group_by { |excerpt| [ excerpt.language, excerpt.category, excerpt.speed_band ] }.values.all? { |group| group.size >= 10 }
     end
@@ -36,6 +36,7 @@ module Typing
       assert_not_empty payload
       assert_equal [ "pt-BR" ], payload.map { |excerpt| excerpt.fetch(:language) }.uniq
       assert payload.any? { |excerpt| excerpt.fetch(:author) == "Machado de Assis" }
+      assert payload.any? { |excerpt| excerpt.fetch(:normalized_text).match?(/[áàâãéêíóôõúç]/) }
     end
 
     test "falls back to english excerpts for unsupported locales" do
@@ -43,12 +44,6 @@ module Typing
 
       assert_not_empty payload
       assert_equal [ "en" ], payload.map { |excerpt| excerpt.fetch(:language) }.uniq
-    end
-
-    private
-
-    def normalized_text_pattern(language)
-      language == "pt-BR" ? /\A[a-z0-9àáâãçéêíóôõúü ]+\z/ : /\A[a-z0-9 ]+\z/
     end
   end
 end
